@@ -4,7 +4,7 @@
   "metadata": {
     "colab": {
       "provenance": [],
-      "authorship_tag": "ABX9TyNosasSz6HovQ0q/VJ0VQ/S",
+      "authorship_tag": "ABX9TyOBikwtoxuUL6XhDu9Gxm+X",
       "include_colab_link": true
     },
     "kernelspec": {
@@ -690,45 +690,33 @@
       "cell_type": "code",
       "source": [
         "from joblib import dump\n",
-        "import numpy as np\n",
-        "import pandas as pd\n",
         "\n",
-        "# Initialize the best mean score to a very low value\n",
-        "best_mean_score = -np.inf\n",
+        "# Initialize best score to a very low number\n",
+        "best_mean_score = -float('inf')\n",
         "best_model = None\n",
         "best_model_name = \"\"\n",
         "\n",
-        "# Loop through models and find the one with the best mean cross-validation score\n",
+        "# Loop through models and find the one with the highest mean score\n",
         "for i, name in enumerate(names):\n",
         "    mean_score = results[i].mean()\n",
+        "    print(f'Model: {name}, Mean Score: {mean_score:.4f}')  # Debugging line\n",
         "    if mean_score > best_mean_score:\n",
         "        best_mean_score = mean_score\n",
         "        best_model = models[i][1]  # Get the model instance\n",
         "        best_model_name = name\n",
         "\n",
-        "# Check if a best model was found\n",
+        "# Check if a model was selected\n",
         "if best_model is not None:\n",
         "    print(f'Best Model: {best_model_name} with accuracy {best_mean_score:.4f}')\n",
-        "\n",
         "    # Train the best model on the full training dataset\n",
-        "    try:\n",
-        "        # Ensure X_train is numeric, handling potential errors\n",
-        "        X_train_numeric = X_train.astype(np.float64)\n",
-        "    except ValueError:\n",
-        "        # Convert column by column if needed\n",
-        "        X_train_numeric = pd.DataFrame(X_train).apply(pd.to_numeric, errors='coerce').fillna(0).values\n",
-        "\n",
-        "    # Fit the best model with the converted data\n",
-        "    best_model.fit(X_train_numeric, Y_train)\n",
-        "\n",
+        "    best_model.fit(X_train, Y_train)\n",
         "    # Save the best model to a file\n",
-        "    dump(best_model, 'best_model.sav')\n",
-        "\n"
+        "    dump(best_model, 'best_model.sav')"
       ],
       "metadata": {
         "id": "I6rz1ZH_Kudh"
       },
-      "execution_count": 32,
+      "execution_count": 38,
       "outputs": []
     }
   ]
