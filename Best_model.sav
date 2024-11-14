@@ -1,0 +1,735 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyNosasSz6HovQ0q/VJ0VQ/S",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/AaditGulati/Assignment-1/blob/main/Best_model.sav\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "7O2SfchI_w8l"
+      },
+      "outputs": [],
+      "source": [
+        "import pandas as pd\n",
+        "from pandas import read_csv\n",
+        "from matplotlib import pyplot as plt\n",
+        "\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.model_selection import cross_val_score\n",
+        "from sklearn.model_selection import StratifiedKFold\n",
+        "\n",
+        "from sklearn.linear_model import LogisticRegression\n",
+        "from sklearn.tree import DecisionTreeClassifier\n",
+        "from sklearn.neighbors import KNeighborsClassifier\n",
+        "from sklearn.discriminant_analysis import LinearDiscriminantAnalysis\n",
+        "from sklearn.naive_bayes import GaussianNB\n",
+        "from sklearn.svm import SVC\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "pip install ucimlrepo"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "OABdYf1R_6OX",
+        "outputId": "48d67bae-f7b2-4b97-8441-c97ea9d14df0"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Collecting ucimlrepo\n",
+            "  Downloading ucimlrepo-0.0.7-py3-none-any.whl.metadata (5.5 kB)\n",
+            "Requirement already satisfied: pandas>=1.0.0 in /usr/local/lib/python3.10/dist-packages (from ucimlrepo) (2.2.2)\n",
+            "Requirement already satisfied: certifi>=2020.12.5 in /usr/local/lib/python3.10/dist-packages (from ucimlrepo) (2024.8.30)\n",
+            "Requirement already satisfied: numpy>=1.22.4 in /usr/local/lib/python3.10/dist-packages (from pandas>=1.0.0->ucimlrepo) (1.26.4)\n",
+            "Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.10/dist-packages (from pandas>=1.0.0->ucimlrepo) (2.8.2)\n",
+            "Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.10/dist-packages (from pandas>=1.0.0->ucimlrepo) (2024.2)\n",
+            "Requirement already satisfied: tzdata>=2022.7 in /usr/local/lib/python3.10/dist-packages (from pandas>=1.0.0->ucimlrepo) (2024.2)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.10/dist-packages (from python-dateutil>=2.8.2->pandas>=1.0.0->ucimlrepo) (1.16.0)\n",
+            "Downloading ucimlrepo-0.0.7-py3-none-any.whl (8.0 kB)\n",
+            "Installing collected packages: ucimlrepo\n",
+            "Successfully installed ucimlrepo-0.0.7\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from ucimlrepo import fetch_ucirepo\n",
+        "\n",
+        "# fetch dataset\n",
+        "air_quality = fetch_ucirepo(id=360)\n",
+        "\n",
+        "# data (as pandas dataframes)\n",
+        "X = air_quality.data.features\n",
+        "y = air_quality.data.targets\n",
+        "\n",
+        "# metadata\n",
+        "print(air_quality.metadata)\n",
+        "\n",
+        "# variable information\n",
+        "print(air_quality.variables)\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "Q5Gx98prBQnB",
+        "outputId": "0bbdaf66-876c-4161-f02e-17e13540059f"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "{'uci_id': 360, 'name': 'Air Quality', 'repository_url': 'https://archive.ics.uci.edu/dataset/360/air+quality', 'data_url': 'https://archive.ics.uci.edu/static/public/360/data.csv', 'abstract': 'Contains the responses of a gas multisensor device deployed on the field in an Italian city. Hourly responses averages are recorded along with gas concentrations references from a certified analyzer. ', 'area': 'Computer Science', 'tasks': ['Regression'], 'characteristics': ['Multivariate', 'Time-Series'], 'num_instances': 9358, 'num_features': 15, 'feature_types': ['Real'], 'demographics': [], 'target_col': None, 'index_col': None, 'has_missing_values': 'no', 'missing_values_symbol': None, 'year_of_dataset_creation': 2008, 'last_updated': 'Sun Mar 10 2024', 'dataset_doi': '10.24432/C59K5F', 'creators': ['Saverio Vito'], 'intro_paper': {'ID': 420, 'type': 'NATIVE', 'title': 'On field calibration of an electronic nose for benzene estimation in an urban pollution monitoring scenario', 'authors': 'S. D. Vito, E. Massera, M. Piga, L. Martinotto, G. Francia', 'venue': 'Sensors and Actuators B: Chemical', 'year': 2008, 'journal': None, 'DOI': '10.1016/j.snb.2007.09.060', 'URL': 'https://www.semanticscholar.org/paper/a90a54a39ff934772df57771a0012981f355949d', 'sha': None, 'corpus': None, 'arxiv': None, 'mag': None, 'acl': None, 'pmid': None, 'pmcid': None}, 'additional_info': {'summary': 'The dataset contains 9358 instances of hourly averaged responses from an array of 5 metal oxide chemical sensors embedded in an Air Quality Chemical Multisensor Device. The device was located on the field in a significantly polluted area, at road level,within an Italian city. Data were recorded from March 2004 to February 2005 (one year)representing the longest freely available recordings of on field deployed air quality chemical sensor devices responses. Ground Truth hourly averaged concentrations for CO, Non Metanic Hydrocarbons, Benzene, Total Nitrogen Oxides (NOx) and Nitrogen Dioxide (NO2)  and were provided by a co-located reference certified analyzer. Evidences of cross-sensitivities as well as both concept and sensor drifts are present as described in De Vito et al., Sens. And Act. B, Vol. 129,2,2008 (citation required) eventually affecting sensors concentration estimation capabilities. Missing values are tagged with -200 value.\\r\\nThis dataset can be used exclusively for research purposes. Commercial purposes are fully excluded.\\r\\n', 'purpose': None, 'funded_by': None, 'instances_represent': None, 'recommended_data_splits': None, 'sensitive_data': None, 'preprocessing_description': None, 'variable_info': '0 Date\\t(DD/MM/YYYY)\\r\\n1 Time\\t(HH.MM.SS)\\r\\n2 True hourly averaged concentration CO in mg/m^3  (reference analyzer)\\r\\n3 PT08.S1 (tin oxide)  hourly averaged sensor response (nominally  CO targeted)\\t\\r\\n4 True hourly averaged overall Non Metanic HydroCarbons concentration in microg/m^3 (reference analyzer)\\r\\n5 True hourly averaged Benzene concentration  in microg/m^3 (reference analyzer)\\r\\n6 PT08.S2 (titania) hourly averaged sensor response (nominally NMHC targeted)\\t\\r\\n7 True hourly averaged NOx concentration  in ppb (reference analyzer)\\r\\n8 PT08.S3 (tungsten oxide) hourly averaged sensor response (nominally NOx targeted) \\r\\n9 True hourly averaged NO2 concentration in microg/m^3 (reference analyzer)\\t\\r\\n10 PT08.S4 (tungsten oxide) hourly averaged sensor response (nominally NO2 targeted)\\t\\r\\n11 PT08.S5 (indium oxide) hourly averaged sensor response (nominally O3 targeted)\\r\\n12 Temperature in Â°C\\t\\r\\n13 Relative Humidity (%) \\t\\r\\n14 AH Absolute Humidity\\r\\n', 'citation': None}}\n",
+            "             name     role         type demographic  \\\n",
+            "0            Date  Feature         Date        None   \n",
+            "1            Time  Feature  Categorical        None   \n",
+            "2          CO(GT)  Feature      Integer        None   \n",
+            "3     PT08.S1(CO)  Feature  Categorical        None   \n",
+            "4        NMHC(GT)  Feature      Integer        None   \n",
+            "5        C6H6(GT)  Feature   Continuous        None   \n",
+            "6   PT08.S2(NMHC)  Feature  Categorical        None   \n",
+            "7         NOx(GT)  Feature      Integer        None   \n",
+            "8    PT08.S3(NOx)  Feature  Categorical        None   \n",
+            "9         NO2(GT)  Feature      Integer        None   \n",
+            "10   PT08.S4(NO2)  Feature  Categorical        None   \n",
+            "11    PT08.S5(O3)  Feature  Categorical        None   \n",
+            "12              T  Feature   Continuous        None   \n",
+            "13             RH  Feature   Continuous        None   \n",
+            "14             AH  Feature   Continuous        None   \n",
+            "\n",
+            "                                          description       units  \\\n",
+            "0                                                None        None   \n",
+            "1                                                None        None   \n",
+            "2   True hourly averaged concentration CO in mg/m^...      mg/m^3   \n",
+            "3   hourly averaged sensor response (nominally  CO...        None   \n",
+            "4   True hourly averaged overall Non Metanic Hydro...  microg/m^3   \n",
+            "5   True hourly averaged Benzene concentration  in...  microg/m^3   \n",
+            "6   hourly averaged sensor response (nominally NMH...        None   \n",
+            "7   True hourly averaged NOx concentration  in ppb...         ppb   \n",
+            "8   hourly averaged sensor response (nominally NOx...        None   \n",
+            "9   True hourly averaged NO2 concentration in micr...  microg/m^3   \n",
+            "10  hourly averaged sensor response (nominally NO2...        None   \n",
+            "11  hourly averaged sensor response (nominally O3 ...        None   \n",
+            "12                                        Temperature          °C   \n",
+            "13                                  Relative Humidity           %   \n",
+            "14                                  Absolute Humidity        None   \n",
+            "\n",
+            "   missing_values  \n",
+            "0              no  \n",
+            "1              no  \n",
+            "2              no  \n",
+            "3              no  \n",
+            "4              no  \n",
+            "5              no  \n",
+            "6              no  \n",
+            "7              no  \n",
+            "8              no  \n",
+            "9              no  \n",
+            "10             no  \n",
+            "11             no  \n",
+            "12             no  \n",
+            "13             no  \n",
+            "14             no  \n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Load dataset\n",
+        "url = \"https://archive.ics.uci.edu/static/public/360/data.csv\"\n",
+        "names = ['Date', 'Time', 'CO(GT)', 'PT08.S1(CO)', 'NMHC(GT)', 'C6H6(GT)', 'PT08.S2(NMHC)', 'NOx(GT)',\n",
+        "         'PT08.S3(NOx)', 'NO2(GT)', 'PT08.S4(NO2)', 'PT08.S5(O3)', 'T', 'RH', 'AH']\n",
+        "dataset = pd.read_csv(url, sep=';', skiprows=1, decimal=',')\n"
+      ],
+      "metadata": {
+        "id": "StDCxxLpBX-I"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import pandas as pd\n",
+        "\n",
+        "# Load dataset with proper separator and handle missing column names\n",
+        "url = \"https://archive.ics.uci.edu/static/public/360/data.csv\"\n",
+        "\n",
+        "# Load the dataset again but with proper parsing\n",
+        "dataset = pd.read_csv(url, sep=',', header=None)  # Use comma as delimiter\n",
+        "dataset.columns = ['Date', 'Time', 'CO(GT)', 'PT08.S1(CO)', 'NMHC(GT)', 'C6H6(GT)',\n",
+        "                   'PT08.S2(NMHC)', 'NOx(GT)', 'PT08.S3(NOx)', 'NO2(GT)', 'PT08.S4(NO2)',\n",
+        "                   'PT08.S5(O3)', 'T', 'RH', 'AH']  # Assign correct column names\n",
+        "\n",
+        "# Convert 'CO(GT)' to numeric, forcing errors to NaN\n",
+        "dataset['CO(GT)'] = pd.to_numeric(dataset['CO(GT)'], errors='coerce')\n",
+        "\n",
+        "# Handle missing values (you can either drop them or fill with a value)\n",
+        "dataset.dropna(subset=['CO(GT)'], inplace=True)  # Drops rows where 'CO(GT)' is NaN\n",
+        "\n",
+        "# Now apply binning\n",
+        "bins = [0, 2, 5, 10]\n",
+        "labels = ['low', 'medium', 'high']\n",
+        "dataset['CO_quality'] = pd.cut(dataset['CO(GT)'], bins=bins, labels=labels)\n",
+        "\n",
+        "# Check the transformed dataset\n",
+        "print(dataset[['CO(GT)', 'CO_quality']].head())\n",
+        "\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "PcfLjjvbCokG",
+        "outputId": "f63c75ce-4195-4490-eede-b050cd3f1582"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "   CO(GT) CO_quality\n",
+            "1     2.6     medium\n",
+            "2     2.0        low\n",
+            "3     2.2     medium\n",
+            "4     2.2     medium\n",
+            "5     1.6        low\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "y"
+      ],
+      "metadata": {
+        "id": "LyXdVZKRFBRg"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "type(dataset)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 203
+        },
+        "id": "Y5YvZsK5FYij",
+        "outputId": "ee73861c-d173-46f3-c53d-c145ec48df95"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "pandas.core.frame.DataFrame"
+            ],
+            "text/html": [
+              "<div style=\"max-width:800px; border: 1px solid var(--colab-border-color);\"><style>\n",
+              "      pre.function-repr-contents {\n",
+              "        overflow-x: auto;\n",
+              "        padding: 8px 12px;\n",
+              "        max-height: 500px;\n",
+              "      }\n",
+              "\n",
+              "      pre.function-repr-contents.function-repr-contents-collapsed {\n",
+              "        cursor: pointer;\n",
+              "        max-height: 100px;\n",
+              "      }\n",
+              "    </style>\n",
+              "    <pre style=\"white-space: initial; background:\n",
+              "         var(--colab-secondary-surface-color); padding: 8px 12px;\n",
+              "         border-bottom: 1px solid var(--colab-border-color);\"><b>pandas.core.frame.DataFrame</b><br/>def __init__(data=None, index: Axes | None=None, columns: Axes | None=None, dtype: Dtype | None=None, copy: bool | None=None) -&gt; None</pre><pre class=\"function-repr-contents function-repr-contents-collapsed\" style=\"\"><a class=\"filepath\" style=\"display:none\" href=\"#\">/usr/local/lib/python3.10/dist-packages/pandas/core/frame.py</a>Two-dimensional, size-mutable, potentially heterogeneous tabular data.\n",
+              "\n",
+              "Data structure also contains labeled axes (rows and columns).\n",
+              "Arithmetic operations align on both row and column labels. Can be\n",
+              "thought of as a dict-like container for Series objects. The primary\n",
+              "pandas data structure.\n",
+              "\n",
+              "Parameters\n",
+              "----------\n",
+              "data : ndarray (structured or homogeneous), Iterable, dict, or DataFrame\n",
+              "    Dict can contain Series, arrays, constants, dataclass or list-like objects. If\n",
+              "    data is a dict, column order follows insertion-order. If a dict contains Series\n",
+              "    which have an index defined, it is aligned by its index. This alignment also\n",
+              "    occurs if data is a Series or a DataFrame itself. Alignment is done on\n",
+              "    Series/DataFrame inputs.\n",
+              "\n",
+              "    If data is a list of dicts, column order follows insertion-order.\n",
+              "\n",
+              "index : Index or array-like\n",
+              "    Index to use for resulting frame. Will default to RangeIndex if\n",
+              "    no indexing information part of input data and no index provided.\n",
+              "columns : Index or array-like\n",
+              "    Column labels to use for resulting frame when data does not have them,\n",
+              "    defaulting to RangeIndex(0, 1, 2, ..., n). If data contains column labels,\n",
+              "    will perform column selection instead.\n",
+              "dtype : dtype, default None\n",
+              "    Data type to force. Only a single dtype is allowed. If None, infer.\n",
+              "copy : bool or None, default None\n",
+              "    Copy data from inputs.\n",
+              "    For dict data, the default of None behaves like ``copy=True``.  For DataFrame\n",
+              "    or 2d ndarray input, the default of None behaves like ``copy=False``.\n",
+              "    If data is a dict containing one or more Series (possibly of different dtypes),\n",
+              "    ``copy=False`` will ensure that these inputs are not copied.\n",
+              "\n",
+              "    .. versionchanged:: 1.3.0\n",
+              "\n",
+              "See Also\n",
+              "--------\n",
+              "DataFrame.from_records : Constructor from tuples, also record arrays.\n",
+              "DataFrame.from_dict : From dicts of Series, arrays, or dicts.\n",
+              "read_csv : Read a comma-separated values (csv) file into DataFrame.\n",
+              "read_table : Read general delimited file into DataFrame.\n",
+              "read_clipboard : Read text from clipboard into DataFrame.\n",
+              "\n",
+              "Notes\n",
+              "-----\n",
+              "Please reference the :ref:`User Guide &lt;basics.dataframe&gt;` for more information.\n",
+              "\n",
+              "Examples\n",
+              "--------\n",
+              "Constructing DataFrame from a dictionary.\n",
+              "\n",
+              "&gt;&gt;&gt; d = {&#x27;col1&#x27;: [1, 2], &#x27;col2&#x27;: [3, 4]}\n",
+              "&gt;&gt;&gt; df = pd.DataFrame(data=d)\n",
+              "&gt;&gt;&gt; df\n",
+              "   col1  col2\n",
+              "0     1     3\n",
+              "1     2     4\n",
+              "\n",
+              "Notice that the inferred dtype is int64.\n",
+              "\n",
+              "&gt;&gt;&gt; df.dtypes\n",
+              "col1    int64\n",
+              "col2    int64\n",
+              "dtype: object\n",
+              "\n",
+              "To enforce a single dtype:\n",
+              "\n",
+              "&gt;&gt;&gt; df = pd.DataFrame(data=d, dtype=np.int8)\n",
+              "&gt;&gt;&gt; df.dtypes\n",
+              "col1    int8\n",
+              "col2    int8\n",
+              "dtype: object\n",
+              "\n",
+              "Constructing DataFrame from a dictionary including Series:\n",
+              "\n",
+              "&gt;&gt;&gt; d = {&#x27;col1&#x27;: [0, 1, 2, 3], &#x27;col2&#x27;: pd.Series([2, 3], index=[2, 3])}\n",
+              "&gt;&gt;&gt; pd.DataFrame(data=d, index=[0, 1, 2, 3])\n",
+              "   col1  col2\n",
+              "0     0   NaN\n",
+              "1     1   NaN\n",
+              "2     2   2.0\n",
+              "3     3   3.0\n",
+              "\n",
+              "Constructing DataFrame from numpy ndarray:\n",
+              "\n",
+              "&gt;&gt;&gt; df2 = pd.DataFrame(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),\n",
+              "...                    columns=[&#x27;a&#x27;, &#x27;b&#x27;, &#x27;c&#x27;])\n",
+              "&gt;&gt;&gt; df2\n",
+              "   a  b  c\n",
+              "0  1  2  3\n",
+              "1  4  5  6\n",
+              "2  7  8  9\n",
+              "\n",
+              "Constructing DataFrame from a numpy ndarray that has labeled columns:\n",
+              "\n",
+              "&gt;&gt;&gt; data = np.array([(1, 2, 3), (4, 5, 6), (7, 8, 9)],\n",
+              "...                 dtype=[(&quot;a&quot;, &quot;i4&quot;), (&quot;b&quot;, &quot;i4&quot;), (&quot;c&quot;, &quot;i4&quot;)])\n",
+              "&gt;&gt;&gt; df3 = pd.DataFrame(data, columns=[&#x27;c&#x27;, &#x27;a&#x27;])\n",
+              "...\n",
+              "&gt;&gt;&gt; df3\n",
+              "   c  a\n",
+              "0  3  1\n",
+              "1  6  4\n",
+              "2  9  7\n",
+              "\n",
+              "Constructing DataFrame from dataclass:\n",
+              "\n",
+              "&gt;&gt;&gt; from dataclasses import make_dataclass\n",
+              "&gt;&gt;&gt; Point = make_dataclass(&quot;Point&quot;, [(&quot;x&quot;, int), (&quot;y&quot;, int)])\n",
+              "&gt;&gt;&gt; pd.DataFrame([Point(0, 0), Point(0, 3), Point(2, 3)])\n",
+              "   x  y\n",
+              "0  0  0\n",
+              "1  0  3\n",
+              "2  2  3\n",
+              "\n",
+              "Constructing DataFrame from Series/DataFrame:\n",
+              "\n",
+              "&gt;&gt;&gt; ser = pd.Series([1, 2, 3], index=[&quot;a&quot;, &quot;b&quot;, &quot;c&quot;])\n",
+              "&gt;&gt;&gt; df = pd.DataFrame(data=ser, index=[&quot;a&quot;, &quot;c&quot;])\n",
+              "&gt;&gt;&gt; df\n",
+              "   0\n",
+              "a  1\n",
+              "c  3\n",
+              "\n",
+              "&gt;&gt;&gt; df1 = pd.DataFrame([1, 2, 3], index=[&quot;a&quot;, &quot;b&quot;, &quot;c&quot;], columns=[&quot;x&quot;])\n",
+              "&gt;&gt;&gt; df2 = pd.DataFrame(data=df1, index=[&quot;a&quot;, &quot;c&quot;])\n",
+              "&gt;&gt;&gt; df2\n",
+              "   x\n",
+              "a  1\n",
+              "c  3</pre>\n",
+              "      <script>\n",
+              "      if (google.colab.kernel.accessAllowed && google.colab.files && google.colab.files.view) {\n",
+              "        for (const element of document.querySelectorAll('.filepath')) {\n",
+              "          element.style.display = 'block'\n",
+              "          element.onclick = (event) => {\n",
+              "            event.preventDefault();\n",
+              "            event.stopPropagation();\n",
+              "            google.colab.files.view(element.textContent, 509);\n",
+              "          };\n",
+              "        }\n",
+              "      }\n",
+              "      for (const element of document.querySelectorAll('.function-repr-contents')) {\n",
+              "        element.onclick = (event) => {\n",
+              "          event.preventDefault();\n",
+              "          event.stopPropagation();\n",
+              "          element.classList.toggle('function-repr-contents-collapsed');\n",
+              "        };\n",
+              "      }\n",
+              "      </script>\n",
+              "      </div>"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 26
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Extracting features and target from the dataset\n",
+        "array = dataset.values\n",
+        "X = array[:, 0:14]  # Features (first 14 columns including the 'CO(GT)' and other features)\n",
+        "y = array[:, 14]    # Target (CO_quality column, now transformed)\n",
+        "\n",
+        "# Split the data into training and validation sets\n",
+        "X_train, X_validation, Y_train, Y_validation = train_test_split(X, y, test_size=0.20, random_state=1, shuffle=True)\n"
+      ],
+      "metadata": {
+        "id": "4Q04olJ9FcRb"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "X_validation.shape"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "9fuiafnUFygV",
+        "outputId": "4a4a9dfb-41d5-4c63-8349-4b422b6d0b32"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(1872, 14)"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 28
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Spot Check Algorithms\n",
+        "models = []\n",
+        "\n",
+        "models.append(('LR', LogisticRegression(solver='liblinear', multi_class='ovr')))\n",
+        "models.append(('LDA', LinearDiscriminantAnalysis()))\n",
+        "models.append(('KNN', KNeighborsClassifier()))\n",
+        "models.append(('CART', DecisionTreeClassifier()))\n",
+        "models.append(('SVM', SVC(gamma='auto')))"
+      ],
+      "metadata": {
+        "id": "XFoaRDv2GBGd"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "for i,j in models:\n",
+        "  print(j)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "fcfsZ5ORGEMJ",
+        "outputId": "84e084da-00a2-4fe0-fbe1-8689488b64de"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "LogisticRegression(multi_class='ovr', solver='liblinear')\n",
+            "LinearDiscriminantAnalysis()\n",
+            "KNeighborsClassifier()\n",
+            "DecisionTreeClassifier()\n",
+            "SVC(gamma='auto')\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "\n",
+        "# Now, retry the model training and evaluation\n",
+        "array = dataset.values\n",
+        "X = array[:, 0:11]  # Features (after dropping non-numeric columns)\n",
+        "y = array[:, 11]    # Target (quality column)\n",
+        "X_train, X_validation, Y_train, Y_validation = train_test_split(X, y, test_size=0.20, random_state=1, shuffle=True)\n",
+        "\n",
+        "# Spot Check Algorithms\n",
+        "results = []\n",
+        "names = []\n",
+        "\n",
+        "for name, model in models:\n",
+        "    kfold = StratifiedKFold(n_splits=10, random_state=1, shuffle=True)\n",
+        "    cv_results = cross_val_score(model, X_train, Y_train, cv=kfold, scoring='accuracy')\n",
+        "    results.append(cv_results)\n",
+        "    names.append(name)\n",
+        "    print(f'{name}: {cv_results.mean():.4f} ({cv_results.std():.4f})')\n",
+        "\n",
+        "# Compare algorithms using a boxplot\n",
+        "plt.boxplot(results, labels=names)\n",
+        "plt.title('Algorithm Comparison')\n",
+        "plt.show()\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 1000
+        },
+        "id": "U0G6E-6HGHZe",
+        "outputId": "33acc02e-8cd6-40f6-90ed-1e8301cc9013"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/sklearn/model_selection/_split.py:776: UserWarning: The least populated class in y has only 1 members, which is less than n_splits=10.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/svm/_base.py:1235: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/svm/_base.py:1235: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/svm/_base.py:1235: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/svm/_base.py:1235: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n",
+            "/usr/local/lib/python3.10/dist-packages/sklearn/linear_model/_logistic.py:1256: FutureWarning: 'multi_class' was deprecated in version 1.5 and will be removed in 1.7. Use OneVsRestClassifier(LogisticRegression(..)) instead. Leave it to its default value to avoid this warning.\n",
+            "  warnings.warn(\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "LR: 0.0442 (0.0019)\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/sklearn/model_selection/_split.py:776: UserWarning: The least populated class in y has only 1 members, which is less than n_splits=10.\n",
+            "  warnings.warn(\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "LDA: 0.0461 (0.0028)\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/sklearn/model_selection/_split.py:776: UserWarning: The least populated class in y has only 1 members, which is less than n_splits=10.\n",
+            "  warnings.warn(\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "KNN: 0.0429 (0.0024)\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/sklearn/model_selection/_split.py:776: UserWarning: The least populated class in y has only 1 members, which is less than n_splits=10.\n",
+            "  warnings.warn(\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "CART: 0.0450 (0.0035)\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stderr",
+          "text": [
+            "/usr/local/lib/python3.10/dist-packages/sklearn/model_selection/_split.py:776: UserWarning: The least populated class in y has only 1 members, which is less than n_splits=10.\n",
+            "  warnings.warn(\n"
+          ]
+        },
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "SVM: 0.0397 (0.0006)\n"
+          ]
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<Figure size 640x480 with 1 Axes>"
+            ],
+            "image/png": "iVBORw0KGgoAAAANSUhEUgAAAjUAAAGzCAYAAADXFObAAAAAOXRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjguMCwgaHR0cHM6Ly9tYXRwbG90bGliLm9yZy81sbWrAAAACXBIWXMAAA9hAAAPYQGoP6dpAABD0UlEQVR4nO3dfVxUZf7/8fcAyk2CdyQTipKKguLNgkFo38yNDUq3aBXNwruM1QpvfrhUmqHmtqxrlqaW2o3oimlWUmuGSxhmX3FdIXMr8GYTNQ20G4GQ9Qbm90dfp50YlSFH4Ph6Ph7nYXOdz7mu68yR5u2Zcw4mi8ViEQAAQBPn0tATAAAAuBIINQAAwBAINQAAwBAINQAAwBAINQAAwBAINQAAwBAINQAAwBAINQAAwBAINQAAwBAINUAjYTKZNHv27AYbPzAwUGPHjq1z7ZAhQ5w7IVxSenq6TCaTiouLG3oqQKNBqAGughdffFEmk0mRkZENPZU6++KLLzR79uxG/aG5ceNG3XnnnfL19VXz5s3l7++v4cOHa+vWrQ09NQANgFADXAUZGRkKDAzUrl27dPDgwYaejl379u3Tyy+/bH39xRdfaM6cOY0y1FgsFo0bN06/+93vVFpaquTkZC1btkyPPvqovvzyS91+++3asWNHQ0/TqUaNGqWqqip16tSpoacCNBpuDT0BwOgOHTqkHTt26O2339aECROUkZGhWbNmNfS0JP0YDv7zn//I09NT7u7uDT2dOluwYIHS09M1depUPffcczKZTNZ1Tz75pP7617/Kzc2Y/3urrKzUddddJ1dXV7m6ujb0dIBGhTM1gJNlZGSodevWGjx4sIYNG6aMjIw6b5ubm6t+/frJw8NDXbp00fLlyzV79mybD3FJOn/+vObOnasuXbrI3d1dgYGBmjFjhs6cOWNTd+FamC1btqhfv37y9PTU8uXLresuXFOTnp6u+Ph4SdKgQYNkMplkMpmUm5tr09/HH3+siIgIeXh4qHPnzlq9erXN+gvXfXz88ceaPHmyrr/+erVq1UoTJkzQ2bNnderUKY0ePVqtW7dW69at9dhjj8lisVzyPamqqlJaWpqCg4P17LPP1novpB/PYkRERFhff/nll4qPj1ebNm3k5eWlm2++We+9916t99pkMumNN97QnDlz1L59e3l7e2vYsGEqKyvTmTNnNHXqVLVr104tWrTQuHHjar2/JpNJSUlJysjIUPfu3eXh4aHw8HB99NFHNnWHDx/WI488ou7du8vT01Nt27ZVfHx8rbNiF96/bdu26ZFHHlG7du3UoUMHm3X/vc3u3bsVExMjX19feXp66sYbb9SDDz5o02dlZaWmTZumgIAAubu7q3v37nr22Wdrve8X9iUzM1OhoaFyd3dXz549lZWVdcnjAzQkY/5TBmhEMjIy9Lvf/U7NmzfXyJEj9dJLL+mf//ynbrrppktu98knnyg2NlY33HCD5syZo+rqaj399NO6/vrra9U+9NBDWrVqlYYNG6Zp06bpH//4h9LS0lRYWKiNGzfa1O7bt08jR47UhAkTlJiYqO7du9fq79Zbb9XkyZP1wgsvaMaMGQoJCZEk65+SdPDgQQ0bNkzjx4/XmDFj9Nprr2ns2LEKDw9Xz549bfqbNGmSzGaz5syZo507d2rFihVq1aqVduzYoY4dO+pPf/qTNm/erPnz5ys0NFSjR4++6Pvy8ccf67vvvtPUqVPrdKaitLRU/fv31+nTpzV58mS1bdtWq1at0t13360333xT9957r019WlqaPD099cQTT+jgwYNavHixmjVrJhcXF33//feaPXu2du7cqfT0dN14441KTU212X7btm1av369Jk+eLHd3d7344ouKjY3Vrl27FBoaKkn65z//qR07dui+++5Thw4dVFxcrJdeekm33XabvvjiC3l5edn0+cgjj+j6669XamqqKisr7e7niRMndMcdd+j666/XE088oVatWqm4uFhvv/22tcZisejuu+/Whx9+qPHjx6tv377asmWLUlJSdOzYMT3//PO13uu3335bjzzyiLy9vfXCCy9o6NChOnLkiNq2bXvZ9x646iwAnGb37t0WSZbs7GyLxWKx1NTUWDp06GCZMmVKrVpJllmzZllf//a3v7V4eXlZjh07Zm07cOCAxc3NzfLfP7p79uyxSLI89NBDNv394Q9/sEiybN261drWqVMniyRLVlZWrfE7depkGTNmjPX1hg0bLJIsH374od1aSZaPPvrI2nbixAmLu7u7Zdq0ada2lStXWiRZYmJiLDU1Ndb2qKgoi8lkskycONHadv78eUuHDh0sAwcOrDXef1u0aJFFkmXjxo2XrLtg6tSpFkmW7du3W9sqKiosN954oyUwMNBSXV1tsVgslg8//NAiyRIaGmo5e/astXbkyJEWk8lkufPOO236jYqKsnTq1MmmTZJFkmX37t3WtsOHD1s8PDws9957r7Xt9OnTteaZl5dnkWRZvXq1te3C+3fLLbdYzp8/b1N/Yd2hQ4csFovFsnHjRoskyz//+c+LvheZmZkWSZY//vGPNu3Dhg2zmEwmy8GDB232pXnz5jZtn376qUWSZfHixRcdA2hIfP0EOFFGRob8/Pw0aNAgST+e0h8xYoTWrVun6urqi25XXV2tDz74QHFxcfL397e2d+3aVXfeeadN7ebNmyVJycnJNu3Tpk2TpFpfs9x4442KiYmp/079nx49euh//ud/rK+vv/56de/eXV9++WWt2vHjx9t8TRQZGSmLxaLx48db21xdXdWvXz+72/+38vJySZK3t3ed5rl582ZFRETolltusba1aNFCv//971VcXKwvvvjCpn706NFq1qxZrbn+/GucyMhIHT16VOfPn7dpj4qKUnh4uPV1x44ddc8992jLli3WY+7p6Wldf+7cOX377bfq2rWrWrVqpYKCglr7kJiYeNmzUq1atZIkbdq0SefOnbNbs3nzZrm6umry5Mk27dOmTZPFYtH7779v0x4dHa0uXbpYX/fu3Vs+Pj6XPUZAQyHUAE5SXV2tdevWadCgQTp06JAOHjyogwcPKjIyUqWlpcrJybnotidOnFBVVZW6du1aa93P2w4fPiwXF5da7WazWa1atdLhw4dt2m+88cZfsFc/6dixY6221q1b6/vvv79sbcuWLSVJAQEBtdrtbf/ffHx8JEkVFRV1mufhw4ftfsV24au0n78/jsy1pqZGZWVlNu1BQUG1xurWrZtOnz6tkydPSvrxuqDU1FTrdS2+vr66/vrrderUqVr9SXU7ZgMHDtTQoUM1Z84c+fr66p577tHKlSttrvs5fPiw/P39awXCur4X0sWPMdAYEGoAJ9m6dau+/vprrVu3TkFBQdZl+PDhkuTQBcN1Ye+CWXv++yzBL3GxMwcWOxf6XqzWXru97f9bcHCwJOlf//rX5aZYL47MVbr8fO2ZNGmSnnnmGQ0fPlxvvPGG/v73vys7O1tt27ZVTU1Nrfq6HDOTyaQ333xTeXl5SkpK0rFjx/Tggw8qPDxcP/zwg8NzlK7sPgNXAxcKA06SkZGhdu3aaenSpbXWvf3229q4caOWLVtm9wOrXbt28vDwsPtMm5+3derUSTU1NTpw4IDNhbylpaU6depUvZ9jUteQdLXdcsstat26tV5//XXNmDHjsl/LdOrUSfv27avVXlRUZF1/JR04cKBW2/79++Xl5WW9yPvNN9/UmDFjtGDBAmvNf/7zH506deoXj3/zzTfr5ptv1jPPPKO1a9fqgQce0Lp16/TQQw+pU6dO+uCDD1RRUWFztsZZ7wVwtXGmBnCCqqoqvf322xoyZIiGDRtWa0lKSlJFRYXeffddu9u7uroqOjpamZmZOn78uLX94MGDta57uOuuuyRJCxcutGl/7rnnJEmDBw+u1z5cd911knRFPmivJC8vLz3++OMqLCzU448/bveswZo1a7Rr1y5JP74/u3btUl5ennV9ZWWlVqxYocDAQPXo0eOKzi8vL8/mupijR4/qnXfe0R133GENYK6urrXmvXjx4kteZ3U533//fa0++/btK0nWr6DuuusuVVdXa8mSJTZ1zz//vEwmU63rtYCmhjM1gBO8++67qqio0N133213/c0336zrr79eGRkZGjFihN2a2bNn6+9//7sGDBighx9+2PphFBoaqj179ljr+vTpozFjxmjFihU6deqUBg4cqF27dmnVqlWKi4uzXqTsqL59+8rV1VXz5s1TWVmZ3N3d9etf/1rt2rWrV39XUkpKij7//HMtWLBAH374oYYNGyaz2aySkhJlZmZq165d1icKP/HEE3r99dd15513avLkyWrTpo1WrVqlQ4cO6a233pKLy5X9t11oaKhiYmJsbumWpDlz5lhrhgwZor/+9a9q2bKlevTooby8PH3wwQe/6DbpVatW6cUXX9S9996rLl26qKKiQi+//LJ8fHyswfe3v/2tBg0apCeffFLFxcXq06eP/v73v+udd97R1KlTbS4KBpoiQg3gBBkZGfLw8NBvfvMbu+tdXFw0ePBgZWRk6Ntvv7X7YRYeHq73339ff/jDH/TUU08pICBATz/9tAoLC61fF1zwyiuvqHPnzkpPT9fGjRtlNps1ffr0X/TkYrPZrGXLliktLU3jx49XdXW1Pvzww0YRalxcXLR69Wrdc889WrFihZ599lmVl5fr+uuv16233qq//OUvioqKkiT5+flpx44devzxx7V48WL95z//Ue/evfW3v/2t3mexLmXgwIGKiorSnDlzdOTIEfXo0UPp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OnbsmN566y3t27dP8fHxCggI0Ndff21dpk2bpp49e9q0jRgx4mrsbpMxdOhQffLJJ1q1apX279+vd999V7fddpvKysqUkJCglStX1trGYrEoPT1do0ePVrNmzSRJ1113nU6cOKG8vDyb2ldffVUdO3a8KvviLISaJsrb21tms1mdO3fW448/rjZt2ig7O7uhp2V4F973jh076tZbb9WKFSv01FNPKTU1Vfv27bOpffXVV5WQkKCEhAS9+uqrDTTjpu8vf/mLJk2apHXr1mncuHHW9ujoaJnNZqWlpV22j0mTJmnWrFmcMaujRx55RCaTSbt27dLQoUPVrVs39ezZU8nJydq5c6e1btu2baqqqtLTTz+t8vJy7dixo1ZfJpNJZrNZN9xwg/r376/x48dr165dqqyslNlsti4tWrSQm5ubTZunp+fV3O1G7dSpU9q+fbvmzZunQYMGqVOnToqIiND06dN19913a/z48dq/f78+/vhjm+22bdumL7/8UuPHj7e2ubm56f7777cJol999ZVyc3N1//33X7V9cgZCTRNXU1Ojt956S99//72aN2/e0NO5Jk2ZMkUWi0XvvPOOte3f//638vLyNHz4cA0fPlzbt2/X4cOHG3CWTdPjjz+uuXPnatOmTbr33ntt1rm6uupPf/qTFi9erK+++uqS/UydOlXnz5/X4sWLnTldQ/juu++UlZWlRx99VNddd12t9a1atbL+96uvvqqRI0eqWbNmGjly5GXD+4kTJ7Rx40a5urrK1dX1Sk/d0Fq0aKEWLVooMzPTbjjv1auXbrrpplpnzFauXKn+/fsrODjYpv3BBx/UG2+8odOnT0v68avC2NhY+fn5OW8nrgJCTRP1+OOPq0WLFnJ3d9ewYcPUunVrPfTQQw09rWtSmzZt1K5dOxUXF1vbXnvtNd15551q3bq12rRpo5iYGLunhnFx77//vv7yl7/onXfe0e2332635t5771Xfvn01a9asS/bl5eWlWbNmKS0tTWVlZc6YrmEcPHhQFoul1ofgz5WXl+vNN99UQkKCJCkhIUFvvPGGfvjhB5u6srIytWjRQtddd538/Pz04YcfXjQw4eLc3NyUnp6uVatWqVWrVhowYIBmzJihvXv3WmvGjx+vDRs2WI9BRUWF3nzzTT344IO1+vvVr36lzp07680337R+RWWvrqkh1DRRKSkp2rNnj7Zu3arIyEg9//zz6tq1a0NP65plsVisF6hWV1dr1apV1v/ZSz/+Dz89PV01NTUNNcUmp3fv3goMDNSsWbNqfVD+t3nz5mnVqlUqLCy8ZH/jx49X27ZtNW/evCs9VUOp62/Oef3119WlSxf16dNHktS3b1916tRJ69evt6nz9vbWnj17tHv3bi1YsEBhYWF2r0HD5Q0dOlTHjx/Xu+++q9jYWOXm5iosLMx6QfXIkSNVXV2tN954Q5K0fv16ubi4XPTapAcffFArV67Utm3bVFlZqbvuuutq7YrTEGqaKF9fX3Xt2lX/8z//ow0bNmjy5Mn64osvGnpa16Rvv/1WJ0+e1I033ihJ2rJli44dO6YRI0bIzc1Nbm5uuu+++3T48OFad47g4tq3b6/c3FwdO3ZMsbGxqqiosFt36623KiYmRtOnT79kf25ubnrmmWe0aNEiHT9+3BlTNoSgoCCZTCYVFRVdsu7VV1/V559/bv077ubmpi+++KLW1x8uLi7q2rWrQkJClJycrJtvvlkPP/ywM3fB0Dw8PPSb3/xGTz31lHbs2KGxY8daz1T6+Pho2LBh1rPCK1eu1PDhw9WiRQu7fT3wwAPauXOnZs+erVGjRsnNze2q7YezEGoMICAgQCNGjLjs/9ThHIsWLZKLi4v1FuRXX31V9913n/bs2WOz3HfffVww7KBOnTpp27ZtKikpuWSw+fOf/6y//e1vte7m+Ln4+Hj17NlTc+bMccZ0DeHC16VLly5VZWVlrfWnTp3Sv/71L+3evVu5ubk2f8dzc3OVl5d3yUD0xBNPaP369SooKHDmblwzevToYXOcxo8fr48//libNm3Sjh07bC4Q/rk2bdro7rvv1rZt2wzx1ZMkNf1YZmBlZWXas2ePTVvbtm3t1k6ZMkWhoaHavXu3+vXrdxVmZ1yXet8rKipUUlKic+fO6dChQ1qzZo1eeeUVpaWlqWvXrjp58qT+9re/6d1331VoaKhNH6NHj9a9996r7777Tm3atLlau9PkBQQEKDc3V4MGDVJMTIyysrJq1fTq1UsPPPCAXnjhhcv29+c//1kxMTHOmKphLF26VAMGDFBERISefvpp9e7dW+fPn1d2drZeeuklxcTEKCIiQrfeemutbW+66Sa9+uqrdp9bI/14PO+9916lpqZq06ZNzt4Vw/j2228VHx+vBx98UL1795a3t7d2796tv/zlL7rnnnusdbfeequ6du2q0aNHKzg4WP37979kv+np6XrxxRcv+tnS1HCmphHLzc3Vr371K5vlYv/C7NGjh+644w6lpqZe5Vkaz6Xe99TUVN1www3q2rWrRo0apbKyMuXk5Ojxxx+XJK1evVrXXXed3Qtbb7/9dnl6emrNmjVXdX+MoEOHDsrNzdU333yjmJgYlZeX16p5+umn63TN0q9//Wv9+te/1vnz550xVUPo3LmzCgoKNGjQIE2bNk2hoaH6zW9+o5ycHC1atEhr1qzR0KFD7W47dOhQrV69WufOnbto///v//0/vffee9q1a5ezdsFwWrRoYb1+8tZbb1VoaKieeuopJSYmasmSJdY6k8mkBx98UN9//32dzr54enoaJtBIkslS16vCAAAAGjHO1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEMg1AAAAEP4/6h691/jbugAAAAAAElFTkSuQmCC\n"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from joblib import dump\n",
+        "import numpy as np\n",
+        "import pandas as pd\n",
+        "\n",
+        "# Initialize the best mean score to a very low value\n",
+        "best_mean_score = -np.inf\n",
+        "best_model = None\n",
+        "best_model_name = \"\"\n",
+        "\n",
+        "# Loop through models and find the one with the best mean cross-validation score\n",
+        "for i, name in enumerate(names):\n",
+        "    mean_score = results[i].mean()\n",
+        "    if mean_score > best_mean_score:\n",
+        "        best_mean_score = mean_score\n",
+        "        best_model = models[i][1]  # Get the model instance\n",
+        "        best_model_name = name\n",
+        "\n",
+        "# Check if a best model was found\n",
+        "if best_model is not None:\n",
+        "    print(f'Best Model: {best_model_name} with accuracy {best_mean_score:.4f}')\n",
+        "\n",
+        "    # Train the best model on the full training dataset\n",
+        "    try:\n",
+        "        # Ensure X_train is numeric, handling potential errors\n",
+        "        X_train_numeric = X_train.astype(np.float64)\n",
+        "    except ValueError:\n",
+        "        # Convert column by column if needed\n",
+        "        X_train_numeric = pd.DataFrame(X_train).apply(pd.to_numeric, errors='coerce').fillna(0).values\n",
+        "\n",
+        "    # Fit the best model with the converted data\n",
+        "    best_model.fit(X_train_numeric, Y_train)\n",
+        "\n",
+        "    # Save the best model to a file\n",
+        "    dump(best_model, 'best_model.sav')\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "I6rz1ZH_Kudh"
+      },
+      "execution_count": 32,
+      "outputs": []
+    }
+  ]
+}
